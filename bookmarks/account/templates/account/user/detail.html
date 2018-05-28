@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+    {% load thumbnail %}
+{% block title %}{{ user.get_full_name }}{% endblock %}
+{% block content %}
+    <!--To display the  Username and respective profile pic-->
+    <h1>{{ user.get_full_name }}</h1>
+      <div class="profile-info">
+            {% thumbnail user.profile.photo "180x180" crop="100%" as im %}
+                <img src="{{ im.url }}" class="user-detail">
+            {% endthumbnail %}
+      </div>
+
+    {% with total_followers=user.followers.count %}
+        <span class="count">
+            <span class="total">{{ total_followers }} </span>follower{{ total_followers|pluralize }}
+        </span>
+        <!--To decide to show hyperlink for follow/Unfollow-->
+        <a href="#" data-id="{{ user.id }}" data-action="{% if request.user in user.followers.all %}un{% endif %}follow" class="follow button">
+            {% if request.user not in user.followers.all %}
+                Follow
+            {% else %}
+                Unfollow
+            {% endif %}
+        </a>
+        <!--Diaplay the image list for that user-->
+        <div id="image-list" class="image-container">
+            {% include "images/image/list_ajax.html" with images=user.images_created.all %}
+        </div>
+    {% endwith %}
+{% endblock %}
+{% block domready %}
+      //To identify anchor class having follow class,onclik trigger event
+      $('a.follow').click(function(e){
+            //Prevent the default behaviour of anchor tag
+            e.preventDefault();
+            //On post of form what needs to be done,this is the AJAX call(asynchronus call)
+            //specify target view URL
+            $.post('{% url "user_follow" %}',
+            {
+                  //Place data in key,value pairs
+                  id: $(this).data('id'),
+                  action: $(this).data('action')
+            },
+            //execute the below function
+            function(data){
+                  if (data['status'] == 'ok') {
+                        //Identify previous action
+                        var previous_action = $('a.follow').data('action');
+                        // toggle data-action
+                        //To write into anchor tag data class
+                        $('a.follow').data('action',previous_action == 'follow' ? 'unfollow' : 'follow');
+                        //To write into anchor tag text
+                        $('a.follow').text(previous_action == 'follow' ? 'Unfollow' : 'Follow');
+                        // update total followers
+                        var previous_followers = parseInt($('span.count .total').text());
+                        $('span.count .total').text(previous_action == 'follow' ?previous_followers + 1 : previous_followers - 1);
+                      }
+              }
+            );
+          });
+{% endblock %}

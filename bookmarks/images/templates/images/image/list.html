@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}Images bookmarked{% endblock %}
+{% block content %}
+    <h1>Images bookmarked</h1>
+    <div id="image-list">
+          <!--to include the list_ajax.html template in image list-->
+          {% include "images/image/list_ajax.html" %}
+    </div>
+{% endblock %}
+
+{% block domready %}
+    var page = 1;
+    var empty_page = false;
+    var block_request = false;
+    //$(window).scroll is used to capture the scroll event and we define a handler for it
+    $(window).scroll(function() {
+          //To identify margin available to load next page
+          //$(document).height() gives height of entire document
+          //$(window).height() gives the height of window
+          var margin = $(document).height() - $(window).height() - 200;
+          //$(window).scrollTop() gives the position of vertical scrollbar
+          if ($(window).scrollTop() > margin && empty_page == false &&block_request == false)
+           {
+                //initiate next request,hence block any further request
+                block_request = true;
+                //loading next page hance incrementing the page variable
+                page += 1;
+                //initiate the ajax request,response gives the data set
+                $.get('?page=' + page, function(data) {
+                          //If no data set empty_page to true
+                          if(data == '') {
+                                  empty_page = true;
+                                }
+                          //If data is already received next request can be initiated hance change block_request = false;
+                          //append the current data to image_list(div id mentioned above)
+                          else {
+                                  block_request = false;
+                                  $('#image-list').append(data);
+                                }
+                      });
+          }
+});
+{% endblock %}

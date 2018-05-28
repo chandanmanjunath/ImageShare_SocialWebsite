@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block title %}{{ image.title }}{% endblock %}
+{% block content %}
+<h1>{{ image.title }}</h1>
+      <!--loading the image to restrict to certain resolution/size as we come across images in various sizes-->
+       <!--thunbernail is the template tag provided by django-->
+        {% load thumbnail %}
+        <!--once the thunmber nail is loaded it creates image of 300 pixels which will be displayed in the page(that url is refered)-->
+        <!--however a hyperlink is provided to get the details-->
+        {% thumbnail image.image "300" as im %}
+              <a href="{{ image.image.url }}">
+                  <img src="{{ im.url }}" class="image-detail">
+              </a>
+        {% endthumbnail %}
+        {% with total_likes=image.users_like.count users_like=image.users_like.all %}
+          <div class="image-info">
+              <div>
+                  <span class="count">
+                       <span class="total">{{ total_likes }}</span>like{{ total_likes|pluralize }}
+                  </span>
+                  <span class="count_2">
+                        <span class="total">{{ total_views }}</span>view{{ total_views|pluralize }}
+                  </span>
+                  <a href="#" data-id="{{ image.id }}" data-action="{% if request.user in users_like %}un{% endif %}like" class="like button">
+                      {% if request.user not in users_like %}
+                          Like
+                      {% else %}
+                          Unlike
+                      {% endif %}
+                  </a>
+              </div>
+              {{ image.description|linebreaks }}
+          </div>
+          <div class="image-likes">
+              {% for user in image.users_like.all %}
+                  <div>
+                        <img src="{{ user.profile.photo.url }}">
+                        <p>{{ user.first_name }}</p>
+                  </div>
+              {% empty %}
+                    Nobody likes this image yet.
+              {% endfor %}
+        </div>
+      {% endwith %}
+{% endblock %}
+{% block domready %}
+//To select anchor tags with class "like" on clik of its use the below handler
+$('a.like').click(function(e){
+          //To prevent the default behaviour of anchor tag to navigate to a link
+          e.preventDefault();
+          //To give the URL reference using iamges:like
+          //Below is aynchronus request to the server(pointing to view)
+          $.post('{% url "images:like" %}',
+          {
+              //get the id and action values from anchor place it in POST dictionary
+              //These values will be used by view
+              id: $(this).data('id'),
+              action: $(this).data('action')
+          },
+          function(data){
+                  //Once the data is returned in Json format check if ok
+                  if (data['status'] == 'ok')
+                  {
+                      //select the previously selected action
+                      var previous_action = $('a.like').data('action');
+                      // toggle data-action
+                      $('a.like').data('action', previous_action == 'like' ? 'unlike' : 'like');
+                      // toggle link text
+                      $('a.like').text(previous_action == 'like' ? 'Unlike' :'Like');
+                      // update total likes
+                      var previous_likes = parseInt($('span.count .total').text());
+                      $('span.count .total').text(previous_action == 'like' ?previous_likes + 1 : previous_likes - 1);
+                    }
+          }
+          );
+});
+{% endblock %}

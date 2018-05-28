@@ -1,0 +1,82 @@
+{% load staticfiles %}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{% block title %}{% endblock %}</title>
+    <link href="{% static "css/base.css" %}" rel="stylesheet">
+</head>
+<body>
+    <div id="header">
+        <span class="logo">ImageShare</span>
+        {% if request.user.is_authenticated %}
+          <ul class="menu">
+              <li {% if section == "dashboard" %}class="selected"{% endif %}>
+              <a href="{% url "dashboard" %}">DashBoard</a>
+              </li>
+              <li {% if section == "images" %}class="selected"{% endif %}>
+			  <a href="{% url "images:list" %}">Images</a>
+			  </li>
+			  <li {% if section == "imagesview" %}class="selected"{% endif %}>
+			  <a href="{% url "images:ranking" %}">Top Ranked</a>
+              </li>
+              <li {% if section == "people" %}class="selected"{% endif %}>
+			  <a href="{% url "user_list" %}">People</a></li>
+              </li>
+          </ul>
+        {% endif %}
+        <span class="user">
+            {% if request.user.is_authenticated %}
+                Hello {{ request.user.first_name }},
+                <a href="{% url "logout" %}">Logout</a>
+                <!--<a href="{% url "django.contrib.auth.views.logout" %}?next=/">Log out</a>-->
+            {% else %}
+                <a href="{% url "login" %}">Log-in</a>
+            {% endif %}
+        </span>
+        {% if messages %}
+                <ul class="messages">
+                      {% for message in messages %}
+                            <li class="{{ message.tags }}">
+                                {{ message|safe }}
+                                  <a href="#" class="close">✖</a>
+                            </li>
+                      {% endfor %}
+                </ul>
+        {% endif %}
+    </div>
+    <div id="content">
+        {% block content %}
+        {% endblock %}
+    </div>
+
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
+  <!--load the Jquery cookie plugin from Google CDN-->
+  <script src=" http://cdn.jsdelivr.net/jquery.cookie/1.4.1/jquery.cookie.min.js "></script>
+  <script>
+          //get the value of csrf token from cookie
+          var csrftoken = $.cookie('csrftoken');
+          //Check if methods beongs to any of the methods available below function
+          function csrfSafeMethod(method) {
+            // these HTTP methods do not require CSRF protection
+            return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
+          }
+          //below is the function through which we setup Jquery ajaxsetup
+          $.ajaxSetup({
+                  beforeSend: function(xhr, settings) {
+                      //If its not csrf safe and its not cross domain then
+                      if (!csrfSafeMethod(settings.type) && !this.crossDomain)
+                      {
+                        //set the csrftoken for the request header
+                        xhr.setRequestHeader("X-CSRFToken", csrftoken);
+                      }
+                    }
+                  });
+      //The below code will only be executed when DOM is constructed
+			$(document).ready(function(){
+			         //The below block allows the extended templates that can include the javascript
+					{% block domready %}
+					{% endblock %}
+			});
+	</script>
+</body>
+</html>
